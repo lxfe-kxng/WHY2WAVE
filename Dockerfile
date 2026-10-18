@@ -1,6 +1,6 @@
 # Token provider is private to this container; no extra paid service is needed.
 FROM node:22-bookworm-slim AS provider
-RUN apt-get update && apt-get install -y --no-install-recommends git python3 make g++ \
+RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates python3 make g++ \
     && rm -rf /var/lib/apt/lists/*
 RUN git clone --depth 1 --branch 2.0.2 https://github.com/Brainicism/bgutil-ytdlp-pot-provider.git /opt/bgutil
 WORKDIR /opt/bgutil/server

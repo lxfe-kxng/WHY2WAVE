@@ -1,0 +1,6 @@
+node_modules
+bin
+.wavegrab
+uploads
+*.py
+Dockerfile.python

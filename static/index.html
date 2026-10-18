@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="TubeWave — turn YouTube links into clean MP3 or WAV audio. Fast, private, no ads.">
+  <title>TubeWave — YouTube to MP3 / WAV</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23ff2d46'/%3E%3Cpath fill='%23fff' d='M13 10.5v11l9-5.5z'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <canvas id="confetti" aria-hidden="true"></canvas>
+
+  <!-- shown only when embedded in an iframe (blocks downloads & folder picker) -->
+  <div id="embedBanner" class="embed-banner hidden">
+    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M14 3a1 1 0 0 0 0 2h3.6l-7.3 7.3a1 1 0 1 0 1.4 1.4L19 6.4V10a1 1 0 0 0 2 0V4a1 1 0 0 0-1-1h-6ZM5 5a3 3 0 0 0-3 3v11a3 3 0 0 0 3 3h11a3 3 0 0 0 3-3v-5a1 1 0 0 0-2 0v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h5a1 1 0 0 0 0-2H5Z"/></svg>
+    <span>Embedded preview — <strong>downloads &amp; folder picker need a full tab.</strong></span>
+    <button id="openTabBtn" class="banner-btn" type="button">Open in new tab</button>
+  </div>
+
+  <header class="site-header">
+    <div class="logo">
+      <div class="logo-mark" aria-hidden="true">
+        <svg viewBox="0 0 44 44" width="44" height="44">
+          <rect width="44" height="44" rx="13" fill="url(#lg)"/>
+          <defs>
+            <linearGradient id="lg" x1="0" y1="0" x2="44" y2="44">
+              <stop offset="0" stop-color="#ff2d46"/><stop offset="1" stop-color="#ff7a2e"/>
+            </linearGradient>
+          </defs>
+          <path class="logo-play" d="M18 13.5v17l14-8.5z" fill="#fff"/>
+          <g class="logo-waves" stroke="#fff" stroke-width="2.2" stroke-linecap="round" opacity=".9">
+            <path d="M12 18v8"/>
+          </g>
+        </svg>
+      </div>
+      <div>
+        <h1>Tube<span class="accent">Wave</span></h1>
+        <p class="tagline">Paste a YouTube link &rarr; grab the audio as MP3 or WAV</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="card" id="mainCard">
+    <!-- URL -->
+    <section class="fade-up" style="--d:.05s">
+      <label class="label" for="url">YouTube link</label>
+      <div class="input-row" id="inputRow">
+        <svg class="input-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <path fill="currentColor" d="M10.6 13.4a1 1 0 0 1 0-1.4l2.8-2.8a3 3 0 1 1 4.2 4.2l-1.4 1.4a1 1 0 1 1-1.4-1.4l1.4-1.4a1 1 0 0 0-1.4-1.4l-2.8 2.8a1 1 0 0 1-1.4 0Zm2.8-2.8a1 1 0 0 1 0 1.4l-2.8 2.8a3 3 0 1 1-4.2-4.2l1.4-1.4a1 1 0 0 1 1.4 1.4L7.4 12a1 1 0 0 0 1.4 1.4l2.8-2.8a1 1 0 0 1 1.4 0Z"/>
+        </svg>
+        <input id="url" type="url" inputmode="url" spellcheck="false" autocomplete="off"
+               placeholder="https://www.youtube.com/watch?v=…  or  https://youtu.be/…">
+        <button id="pasteBtn" class="btn ghost" type="button" title="Paste from clipboard">
+          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M9 2a3 3 0 0 0-3 3v1H5a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h9a3 3 0 0 0 3-3v-1h1a3 3 0 0 0 3-3V6a3 3 0 0 0-3-3h-1a3 3 0 0 0-3-3H9Zm0 2h6a1 1 0 0 1 1 1v1H8V5a1 1 0 0 1 1-1ZM5 8h10v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Zm13 3a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-1v-7h1Z"/></svg>
+          Paste
+        </button>
+      </div>
+      <div id="urlError" class="error" role="alert"></div>
+    </section>
+
+    <!-- Video preview -->
+    <section id="preview" class="preview hidden" aria-live="polite">
+      <div class="thumb-wrap">
+        <img id="thumb" alt="" width="128" height="72">
+        <div class="thumb-play" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="26" height="26"><path fill="currentColor" d="M8 5.5v13l11-6.5z"/></svg>
+        </div>
+      </div>
+      <div class="preview-info">
+        <h2 id="title"></h2>
+        <div class="meta">
+          <span id="channel"></span>
+          <span class="dot">•</span>
+          <span id="duration"></span>
+          <span class="dot">•</span>
+          <span id="views"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Options -->
+    <section class="options fade-up" style="--d:.12s">
+      <div class="opt">
+        <span class="label">Format</span>
+        <div class="segmented" id="formatSeg" role="radiogroup" aria-label="Audio format">
+          <button type="button" class="seg active" data-fmt="mp3" role="radio" aria-checked="true">MP3</button>
+          <button type="button" class="seg" data-fmt="wav" role="radio" aria-checked="false">WAV</button>
+          <div class="seg-glider" aria-hidden="true"></div>
+        </div>
+        <div class="hint" id="formatHint">Compressed &amp; portable — great for music, podcasts, phone.</div>
+      </div>
+
+      <div class="opt" id="qualityOpt">
+        <label class="label" for="quality">Quality</label>
+        <select id="quality">
+          <option value="128">128 kbps — small file</option>
+          <option value="192" selected>192 kbps — balanced</option>
+          <option value="256">256 kbps — high</option>
+          <option value="320">320 kbps — best</option>
+        </select>
+      </div>
+
+      <div class="opt">
+        <span class="label">Save folder</span>
+        <div class="folder-row">
+          <button id="folderBtn" class="btn ghost" type="button">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M10 4a2 2 0 0 1 1.4.6L13 6h5a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4Zm0 2H6a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-5.6l-1.6-1.6A1 1 0 0 0 10 6Z"/></svg>
+            Select folder&hellip;
+          </button>
+          <div id="folderChip" class="chip hidden">
+            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M10 4a2 2 0 0 1 1.4.6L13 6h5a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4Z"/></svg>
+            <span id="folderName"></span>
+            <button id="folderClear" class="chip-x" type="button" aria-label="Clear folder">&times;</button>
+          </div>
+        </div>
+        <div class="hint" id="folderHint">No folder picked — downloads use your browser&rsquo;s Downloads folder.</div>
+
+        <details class="advanced">
+          <summary>Also save on this machine</summary>
+          <input id="serverPath" type="text" spellcheck="false" placeholder="e.g. ~/Music  — the server writes a copy here">
+        </details>
+      </div>
+
+      <button id="convertBtn" class="btn primary big magnetic" type="button" disabled>
+        <svg class="conv-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 3a1 1 0 0 1 1 1v10.6l3.3-3.3a1 1 0 1 1 1.4 1.4l-5 5a1 1 0 0 1-1.4 0l-5-5a1 1 0 1 1 1.4-1.4L11 14.6V4a1 1 0 0 1 1-1Zm-7 16a1 1 0 0 1 1 1h12a1 1 0 1 1 0 2H6a1 1 0 0 1-1-1Z"/></svg>
+        <span id="convertLabel">Convert &amp; Download</span>
+      </button>
+    </section>
+
+    <!-- Progress -->
+    <section id="progressWrap" class="progress-wrap hidden" aria-live="polite">
+      <div class="eq" id="equalizer" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <div class="progress-head">
+        <span id="stageText">Starting…</span>
+        <span id="pctText">0%</span>
+      </div>
+      <div class="bar"><div id="barFill"></div></div>
+      <div class="progress-sub" id="subText"></div>
+    </section>
+
+    <!-- Result -->
+    <section id="resultWrap" class="result-wrap hidden">
+      <div class="result-card">
+        <div class="check">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+            <path class="check-circle" fill="currentColor" d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20Z"/>
+            <path class="check-mark" fill="none" stroke="#0b0f19" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M7.5 12.5l3 3 6-6"/>
+          </svg>
+        </div>
+        <div class="result-info">
+          <div id="resultName" class="result-name"></div>
+          <div id="resultMeta" class="meta"></div>
+        </div>
+      </div>
+      <audio id="player" controls preload="metadata"></audio>
+      <div class="result-actions">
+        <a id="dlLink" class="btn primary" href="#" download>
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 3a1 1 0 0 1 1 1v10.6l3.3-3.3a1 1 0 1 1 1.4 1.4l-5 5a1 1 0 0 1-1.4 0l-5-5a1 1 0 1 1 1.4-1.4L11 14.6V4a1 1 0 0 1 1-1ZM5 20a1 1 0 0 1 1-1h12a1 1 0 1 1 0 2H6a1 1 0 0 1-1-1Z"/></svg>
+          Download file
+        </a>
+        <button id="saveFolderBtn" class="btn ghost" type="button">Save to folder&hellip;</button>
+        <button id="newBtn" class="btn ghost" type="button">New conversion</button>
+      </div>
+      <div class="hint" id="dlHint">Saved nothing? Right-click &ldquo;Download file&rdquo; &rarr; &ldquo;Save link as&hellip;&rdquo;</div>
+    </section>
+
+    <!-- History -->
+    <section id="historyWrap" class="history-wrap hidden">
+      <div class="history-head">
+        <h3>This session</h3>
+        <span class="hint">swipe a row left to remove</span>
+      </div>
+      <ul id="historyList"></ul>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>Only download audio you have the right to use. Respect YouTube&rsquo;s Terms of Service and copyright.</p>
+    <p class="muted">TubeWave is an independent tool — not affiliated with, endorsed by, or connected to YouTube or Google LLC.</p>
+  </footer>
+
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

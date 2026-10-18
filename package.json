@@ -1,0 +1,16 @@
+{
+  "name": "tubewave-backend",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Express API around yt-dlp + ffmpeg: YouTube to MP3/WAV with direct-download streaming",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "selftest": "node scripts/selftest.js"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "content-disposition": "^0.5.4",
+    "express": "^4.21.2"
+  }
+}

@@ -1,0 +1,4 @@
+fastapi>=0.111
+uvicorn[standard]>=0.30
+yt-dlp>=2025.1.1
+imageio-ffmpeg>=0.5 ; python_version >= "3.9"
